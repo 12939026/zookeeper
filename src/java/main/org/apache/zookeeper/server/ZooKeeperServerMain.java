@@ -94,12 +94,14 @@ public class ZooKeeperServerMain {
     protected void initializeAndRun(String[] args)
         throws ConfigException, IOException, AdminServerException
     {
+    	//注册log4j的mbean，和主流程没关系
         try {
             ManagedUtil.registerLog4jMBeans();
         } catch (JMException e) {
             LOG.warn("Unable to register log4j JMX control", e);
         }
 
+        //再次解析一遍配置文件
         ServerConfig config = new ServerConfig();
         if (args.length == 1) {
             config.parse(args[0]);
@@ -121,6 +123,9 @@ public class ZooKeeperServerMain {
         LOG.info("Starting server");
         FileTxnSnapLog txnLog = null;
         try {
+        	//创建一个MetricsProvider，用于信息收集? 待确定
+        	//这个东西的执行类默认是NullMetricsProvider，也就是啥都不做，
+        	//可以通过在配置文件里指定类名metricsProvider.className来指定实例化的类
             try {
                 metricsProvider = MetricsProviderBootstrap
                         .startMetricsProvider(config.getMetricsProviderClassName(),
@@ -134,7 +139,9 @@ public class ZooKeeperServerMain {
             // so rather than spawning another thread, we will just call
             // run() in this thread.
             // create a file logger url from the command line args
+            // 创建事务日志文件（dataLogDir）和事务快照文件（dataDir）的文件夹，并校验是否有写权限。
             txnLog = new FileTxnSnapLog(config.dataLogDir, config.dataDir);
+            // 创建ZooKeeperServer，将前面配置的参数都放在一起
             final ZooKeeperServer zkServer = new ZooKeeperServer(txnLog,
                     config.tickTime, config.minSessionTimeout, config.maxSessionTimeout, null);
             zkServer.setRootMetricsContext(metricsProvider.getRootContext());
@@ -142,15 +149,19 @@ public class ZooKeeperServerMain {
 
             // Registers shutdown handler which will be used to know the
             // server error or shutdown state changes.
+            // 注册一个countdownlatch，主要用于在服务出问题的时候通知主线程关闭
             final CountDownLatch shutdownLatch = new CountDownLatch(1);
             zkServer.registerServerShutdownHandler(
                     new ZooKeeperServerShutdownHandler(shutdownLatch));
 
             // Start Admin server
+            // 启动一个JettyAdminServer
             adminServer = AdminServerFactory.createAdminServer();
             adminServer.setZooKeeperServer(zkServer);
             adminServer.start();
 
+            
+            //初始化ServerCnxnFactory，核心的方法都在这了
             boolean needStartZKServer = true;
             if (config.getClientPortAddress() != null) {
                 cnxnFactory = ServerCnxnFactory.createFactory();
@@ -159,12 +170,16 @@ public class ZooKeeperServerMain {
                 // zkServer has been started. So we don't need to start it again in secureCnxnFactory.
                 needStartZKServer = false;
             }
+            
+            //用于支持https服务，基本和上面一样，如果上面支持了，则不需要重新启动服务器
             if (config.getSecureClientPortAddress() != null) {
                 secureCnxnFactory = ServerCnxnFactory.createFactory();
                 secureCnxnFactory.configure(config.getSecureClientPortAddress(), config.getMaxClientCnxns(), true);
                 secureCnxnFactory.startup(zkServer, needStartZKServer);
             }
 
+            
+            //ContainerManager用于定期删除那些cversion>0并且没有children节点的node，（为何要删除他们？ 没明白。）
             containerManager = new ContainerManager(zkServer.getZKDatabase(), zkServer.firstProcessor,
                     Integer.getInteger("znode.container.checkIntervalMs", (int) TimeUnit.MINUTES.toMillis(1)),
                     Integer.getInteger("znode.container.maxPerMinute", 10000)
@@ -173,6 +188,7 @@ public class ZooKeeperServerMain {
 
             // Watch status of ZooKeeper server. It will do a graceful shutdown
             // if the server is not running or hits an internal error.
+            // 等待zk主动或者被动地退出
             shutdownLatch.await();
 
             shutdown();

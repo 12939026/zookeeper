@@ -67,13 +67,13 @@ public class QuorumPeerConfig {
     private static boolean standaloneEnabled = true;
     private static boolean reconfigEnabled = false;
 
-    protected InetSocketAddress clientPortAddress;
+    protected InetSocketAddress clientPortAddress;            //对外服务的端口号
     protected InetSocketAddress secureClientPortAddress;
-    protected File dataDir;
+    protected File dataDir;                             //快照文件的目录
     protected File dataLogDir;
     protected String dynamicConfigFileStr = null;
     protected String configFileStr = null;
-    protected int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;
+    protected int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;   //最小时间单元
     protected int maxClientCnxns = 60;
     /** defaults to -1 if not set explicitly */
     protected int minSessionTimeout = -1;

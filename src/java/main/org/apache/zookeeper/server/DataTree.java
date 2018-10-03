@@ -250,12 +250,16 @@ public class DataTree {
         nodes.put(rootZookeeper, root);
 
         /** add the proc node and quota node */
+        //根节点 "/"
         root.addChild(procChildZookeeper);
+        
+        //一些zk自己的管理信息放置的节点"/zookeeper"
         nodes.put(procZookeeper, procDataNode);
 
+        //配额信息"/zookeeper/quota"
         procDataNode.addChild(quotaChildZookeeper);
         nodes.put(quotaZookeeper, quotaDataNode);
-
+        //添加配置信息"/zookeeper/config"
         addConfigNode();
 
         nodeDataSize.set(approximateDataSize());

@@ -735,6 +735,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     }
 
     @Override
+    //启动了线程池workerPool, nio使用的selector和accept线程，最后的expirerThread用于处理超时的会话（将其断开）
     public void start() {
         stopped = false;
         if (workerPool == null) {
