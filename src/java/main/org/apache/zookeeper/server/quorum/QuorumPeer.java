@@ -78,6 +78,7 @@ import static org.apache.zookeeper.common.NetUtils.formatInetAddr;
 import org.apache.zookeeper.metrics.MetricsContext;
 import org.apache.zookeeper.metrics.impl.NullMetricsProvider;
 //test songzl
+//test 2
 /**
  * This class manages the quorum protocol. There are three states this server
  * can be in:
