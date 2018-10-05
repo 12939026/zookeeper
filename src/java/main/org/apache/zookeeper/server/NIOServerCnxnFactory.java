@@ -759,9 +759,11 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     @Override
     public void startup(ZooKeeperServer zks, boolean startServer)
             throws IOException, InterruptedException {
-        start();
+        //启动各种线程池
+    	start();
         setZooKeeperServer(zks);
         if (startServer) {
+        	//初始化ZKDB，并从日志文件中加载数据
             zks.startdata();
             zks.startup();
         }

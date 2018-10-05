@@ -122,6 +122,7 @@ public class FinalRequestProcessor implements RequestProcessor {
             }
 
             // do not add non quorum packets to the queue.
+            // 如果是事务请求，需要将request包装成proposal放到commitedlogs里面
             if (request.isQuorum()) {
                 zks.getZKDatabase().addCommittedProposal(request);
             }

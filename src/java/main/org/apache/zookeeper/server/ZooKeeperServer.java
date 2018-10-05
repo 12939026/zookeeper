@@ -286,6 +286,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
          *
          * See ZOOKEEPER-1642 for more detail.
          */
+    	//根据是否初始化来从内存或者硬盘中读取zxid
         if(zkDb.isInitialized()){
             setZxid(zkDb.getDataTreeLastProcessedZxid());
         }
@@ -294,6 +295,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
 
         // Clean up dead sessions
+        //清理过期的session
         List<Long> deadSessions = new LinkedList<Long>();
         for (Long session : zkDb.getSessions()) {
             if (zkDb.getSessionWithTimeOuts().get(session) == null) {
@@ -307,6 +309,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
 
         // Make a clean snapshot
+        // 重新保存最新的快照文件
         takeSnapshot();
     }
 
@@ -445,7 +448,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
                 LOG.warn("Failed to register with JMX", e);
                 jmxDataTreeBean = null;
             }
-        } catch (Exception e) {
+        } catch (Exception e) { 
             LOG.warn("Failed to register with JMX", e);
             jmxServerBean = null;
         }
@@ -463,15 +466,21 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
     }
 
     public synchronized void startup() {
+    	//创建并开启sessionTracker，sessionTracker是用来控制session连接的。
         if (sessionTracker == null) {
             createSessionTracker();
         }
         startSessionTracker();
+        //设置处理链,单机zk的处理链为PrepRequestProcessor-->SyncRequestProcessor-->FinalRequestProcessor
         setupRequestProcessors();
 
+        //注册JMX，这样通过jconsole等工具可以看到zk的一些信息
         registerJMX();
 
+        //状态置为running
         setState(State.RUNNING);
+        
+        //唤醒该类上的所有等待？ 在哪里，没看见？
         notifyAll();
     }
 

@@ -102,6 +102,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
 
             // we do this in an attempt to ensure that not all of the servers
             // in the ensemble take a snapshot at the same time
+            // 提交的数量做一个随机数，防止多台服务器的日志提交点完全一样
             int randRoll = r.nextInt(snapCount/2);
             while (true) {
                 Request si = null;
@@ -110,6 +111,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                 } else {
                     si = queuedRequests.poll();
                     if (si == null) {
+                    	//这个是提交事务日志
                         flush(toFlush);
                         continue;
                     }
@@ -121,6 +123,7 @@ public class SyncRequestProcessor extends ZooKeeperCriticalThread implements
                     // track the number of records written to the log
                     if (zks.getZKDatabase().append(si)) {
                         logCount++;
+                        //当日志数量满足一定条件时，将数据快照刷盘，并切换到一个新的logStream
                         if (logCount > (snapCount / 2 + randRoll)) {
                             randRoll = r.nextInt(snapCount/2);
                             // roll the log

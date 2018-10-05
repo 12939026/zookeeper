@@ -131,6 +131,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
     public void run() {
         try {
             while (true) {
+            	//阻塞方法，阻塞到submittedRequests获取到请求
                 Request request = submittedRequests.take();
                 long traceMask = ZooTrace.CLIENT_REQUEST_TRACE_MASK;
                 if (request.type == OpCode.ping) {
@@ -142,6 +143,7 @@ public class PrepRequestProcessor extends ZooKeeperCriticalThread implements
                 if (Request.requestOfDeath == request) {
                     break;
                 }
+                //主要的处理逻辑在这里，比如对事务性请求做会话，ACL，版本检查等，还会在这里生成新的ZXID
                 pRequest(request);
             }
         } catch (RequestProcessorException e) {
