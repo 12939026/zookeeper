@@ -891,6 +891,7 @@ public class FastLeaderElection implements Election {
      */
     public Vote lookForLeader() throws InterruptedException {
         try {
+        	//注册mbean
             self.jmxLeaderElectionBean = new LeaderElectionBean();
             MBeanRegistry.getInstance().register(
                     self.jmxLeaderElectionBean, self.jmxLocalPeerBean);

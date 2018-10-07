@@ -1090,12 +1090,15 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     
     @Override
     public void run() {
+    	//更新线程的名字，将一些配置信息放入线程名字中
         updateThreadName();
 
         LOG.debug("Starting quorum peer");
         try {
+        	//注册jmx
             jmxQuorumBean = new QuorumBean(this);
             MBeanRegistry.getInstance().register(jmxQuorumBean, null);
+            //根据是否本机还是其他机器不同的注册逻辑
             for(QuorumServer s: getView().values()){
                 ZKMBeanInfo p;
                 if (getId() == s.id) {
@@ -1126,11 +1129,12 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
              * Main loop
              */
             while (running) {
+            	//根据不同的状态有不同的处理逻辑
                 switch (getPeerState()) {
                 case LOOKING:
                     LOG.info("LOOKING");
                     ServerMetrics.LOOKING_COUNT.add(1);
-
+                    //zzz:是否只读模式，只读模式后面在研究
                     if (Boolean.getBoolean("readonlymode.enabled")) {
                         LOG.info("Attempting to start ReadOnlyZooKeeperServer");
 
@@ -1178,7 +1182,9 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                         }
                     } else {
                         try {
+                           //zzz:reconfigFlag置为false？
                            reconfigFlagClear();
+                           //一般是true，如果false就重新启动选主线程
                             if (shuttingDownLE) {
                                shuttingDownLE = false;
                                startLeaderElection();
