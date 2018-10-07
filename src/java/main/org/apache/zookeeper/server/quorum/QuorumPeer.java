@@ -786,11 +786,11 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
 
     public QuorumPeer() throws SaslException {
-        super("QuorumPeer");
-        quorumStats = new QuorumStats(this);
-        jmxRemotePeerBean = new HashMap<Long, RemotePeerBean>();
-        adminServer = AdminServerFactory.createAdminServer();
-        initialize();
+        super("QuorumPeer");             //给线程命名为QuorumPeer
+        quorumStats = new QuorumStats(this);  //当前的状态，主要4个状态，选主中，leader，follower，observer
+        jmxRemotePeerBean = new HashMap<Long, RemotePeerBean>();  //jmxbean
+        adminServer = AdminServerFactory.createAdminServer();  //启动adminServer（用于配置查看）
+        initialize();    //配置是否开启权限验证，默认不开启
     }
 
     /**
@@ -850,18 +850,24 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     @Override
     public synchronized void start() {
+    	//判断myid是否在服务器列表中
         if (!getView().containsKey(myid)) {
             throw new RuntimeException("My id " + myid + " not in the peer list");
          }
+        //将数据读取到内存中
         loadDataBase();
+        //开启cnxnFactory线程
         startServerCnxnFactory();
+        //开启jetty服务
         try {
             adminServer.start();
         } catch (AdminServerException e) {
             LOG.warn("Problem starting AdminServer", e);
             System.out.println(e);
         }
+        //开启选主线程
         startLeaderElection();
+        //Thread.start
         super.start();
     }
 
@@ -916,6 +922,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
     synchronized public void startLeaderElection() {
         try {
+        	//选票类，初始选举自己为leader
             if (getPeerState() == ServerState.LOOKING) {
                 currentVote = new Vote(myid, getLastLoggedZxid(), getCurrentEpoch());
             }
@@ -924,7 +931,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             re.setStackTrace(e.getStackTrace());
             throw re;
         }
-
+        //创建选举算法，并开启，默认FLE算法
         this.electionAlg = createElectionAlgorithm(electionType);
     }
 
@@ -1031,10 +1038,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             le = new AuthFastLeaderElection(this, true);
             break;
         case 3:
+        	//获取一个QuorumCnxManager，该类用于管理服务器投票连接，底层用tcp实现
             qcm = createCnxnManager();
             QuorumCnxManager.Listener listener = qcm.listener;
             if(listener != null){
+            	//启动listener
                 listener.start();
+                //启动2个处理发送和收取投票信息的线程wsThread，wrThread
                 FastLeaderElection fle = new FastLeaderElection(this, qcm);
                 fle.start();
                 le = fle;

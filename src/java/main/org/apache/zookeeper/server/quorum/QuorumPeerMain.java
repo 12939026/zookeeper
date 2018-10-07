@@ -140,6 +140,7 @@ public class QuorumPeerMain {
     public void runFromConfig(QuorumPeerConfig config)
             throws IOException, AdminServerException
     {
+      //注册log4j的mbean，用于jconsole之类的监控MBEAN
       try {
           ManagedUtil.registerLog4jMBeans();
       } catch (JMException e) {
@@ -147,6 +148,7 @@ public class QuorumPeerMain {
       }
 
       LOG.info("Starting quorum peer");
+      //监控信息，和单机版一样
       MetricsProvider metricsProvider;
       try {
         metricsProvider = MetricsProviderBootstrap
@@ -161,6 +163,8 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
+          //创建一个处理IO连接的组件cnxnFactory，这里和单机版不一样的地方是它不调用startup方法，具体的启动要
+          //等在后面的选主逻辑完成后，确定了自己的身份再启动
           if (config.getClientPortAddress() != null) {
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
@@ -168,43 +172,65 @@ public class QuorumPeerMain {
                       false);
           }
 
+          //https的支持版本，注意，默认实现的NIO模式不支持
           if (config.getSecureClientPortAddress() != null) {
               secureCnxnFactory = ServerCnxnFactory.createFactory();
               secureCnxnFactory.configure(config.getSecureClientPortAddress(),
                       config.getMaxClientCnxns(),
                       true);
           }
-
+          //直接调用new返回一个QuorumPeer
           quorumPeer = getQuorumPeer();
+          //前面设置的监控组件，实际上never uesed?
           quorumPeer.setRootMetricsContext(metricsProvider.getRootContext());
+          //日志（事务日志和数据快照）的操作类
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
                       config.getDataLogDir(),
                       config.getDataDir()));
+          //zzz:本地session？ 暂不明白是干啥用的
           quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
           quorumPeer.enableLocalSessionsUpgrading(
               config.isLocalSessionsUpgradingEnabled());
           //quorumPeer.setQuorumPeers(config.getAllMembers());
+          //选举算法，现在基本都是使用3 FastLeaderElection
           quorumPeer.setElectionType(config.getElectionAlg());
+          //myid文件里指定的服务器id
           quorumPeer.setMyid(config.getServerId());
+          //最小时间单位 ticktime
           quorumPeer.setTickTime(config.getTickTime());
+          //客户端的最小和最大超时时间，用于对客户端设置的超时时间进行限制
+          //（若客户端设置的时间不在这个范围内，会被强制调整到范围里，默认2-20倍的ticktime）
           quorumPeer.setMinSessionTimeout(config.getMinSessionTimeout());
           quorumPeer.setMaxSessionTimeout(config.getMaxSessionTimeout());
+          //leader等待follower启动的最大时间，默认ticktime10倍
           quorumPeer.setInitLimit(config.getInitLimit());
+          //心跳检测的最大时间，默认ticktime5倍
           quorumPeer.setSyncLimit(config.getSyncLimit());
+          //配置文件的地址
           quorumPeer.setConfigFileName(config.getConfigFilename());
+          //内存数据库
           quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));
+          //集群信息的内存存储类
           quorumPeer.setQuorumVerifier(config.getQuorumVerifier(), false);
           if (config.getLastSeenQuorumVerifier()!=null) {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);
           }
+          //初始化内存数据库
           quorumPeer.initConfigInZKDatabase();
+          //注入cnxnFactory
           quorumPeer.setCnxnFactory(cnxnFactory);
+          //https版本
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
+          //是否有权投票，PARTICIPANT（默认）可以投票，OBSERVER不能投票
           quorumPeer.setLearnerType(config.getPeerType());
+          //zzz:判断observer是否同步的属性名称(咱不理解什么意思)
           quorumPeer.setSyncEnabled(config.getSyncEnabled());
+          //Zookeeper服务器是否监听所有可用IP地址的连接，默认false，
+          //zzz:暂时不知道干啥用的，好像是会影响运维部署方面的
           quorumPeer.setQuorumListenOnAllIPs(config.getQuorumListenOnAllIPs());
 
           // sets quorum sasl authentication configurations
+          // zzz:权限相关配置，后面在研究
           quorumPeer.setQuorumSaslEnabled(config.quorumEnableSasl);
           if(quorumPeer.isQuorumSaslAuthEnabled()){
               quorumPeer.setQuorumServerSaslRequired(config.quorumServerRequireSasl);
@@ -213,11 +239,14 @@ public class QuorumPeerMain {
               quorumPeer.setQuorumServerLoginContext(config.quorumServerLoginContext);
               quorumPeer.setQuorumLearnerLoginContext(config.quorumLearnerLoginContext);
           }
+          //连接管理线程数大小
           quorumPeer.setQuorumCnxnThreadsSize(config.quorumCnxnThreadsSize);
+          // 权限管理类，默认不使用
           quorumPeer.initialize();
-          
-          quorumPeer.start();
-          quorumPeer.join();
+          //调用start方法启动线程，start方法重写过，有些其他逻辑，最终还是调用的Thread.start
+          quorumPeer.start();  
+          //等待线程的结束，线程结束表示服务器停止或者出异常了
+          quorumPeer.join();   
       } catch (InterruptedException e) {
           // warn, but generally this is ok
           LOG.warn("Quorum Peer interrupted", e);

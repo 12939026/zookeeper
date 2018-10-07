@@ -156,6 +156,7 @@ public class ZooKeeperServerMain {
 
             // Start Admin server
             // 启动一个JettyAdminServer
+            // 启动可以通过http://127.0.0.1:8080/commands查看一些当前的设置信息
             adminServer = AdminServerFactory.createAdminServer();
             adminServer.setZooKeeperServer(zkServer);
             adminServer.start();

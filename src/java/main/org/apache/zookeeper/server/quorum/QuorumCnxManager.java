@@ -854,10 +854,12 @@ public class QuorumCnxManager {
             InetSocketAddress addr;
             Socket client = null;
             IOException exitException = null;
+            //最多重试3次
             while((!shutdown) && (numRetries < 3)){
                 try {
                     ss = new ServerSocket();
                     ss.setReuseAddress(true);
+                    //zzz: 这两种的区别？ 以后在研究
                     if (self.getQuorumListenOnAllIPs()) {
                         int port = self.getElectionAddress().getPort();
                         addr = new InetSocketAddress(port);
@@ -872,7 +874,9 @@ public class QuorumCnxManager {
                     ss.bind(addr);
                     while (!shutdown) {
                         try {
+                        	//阻塞在这里，等待新的数据进来
                             client = ss.accept();
+                            //一些配置，比如超时时间等
                             setSockOpts(client);
                             LOG.info("Received connection request "
                                      + formatInetAddr((InetSocketAddress)client.getRemoteSocketAddress()));
