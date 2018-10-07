@@ -673,6 +673,8 @@ public class FastLeaderElection implements Election {
      * Send notifications to all peers upon a change in our vote
      */
     private void sendNotifications() {
+    	//获取所有可以参与投票的服务器列表，并将投票包装成ToSend对象，放入sendqueue
+    	//之后前面启动的发送线程wsThread负责从sendqueue将投票取出并发送
         for (long sid : self.getCurrentAndNextConfigVoters()) {
             QuorumVerifier qv = self.getQuorumVerifier();
             ToSend notmsg = new ToSend(ToSend.mType.notification,
@@ -899,6 +901,7 @@ public class FastLeaderElection implements Election {
             LOG.warn("Failed to register with JMX", e);
             self.jmxLeaderElectionBean = null;
         }
+        //时间统计
         if (self.start_fle == 0) {
            self.start_fle = Time.currentElapsedTime();
         }
@@ -911,11 +914,13 @@ public class FastLeaderElection implements Election {
 
             synchronized(this){
                 logicalclock.incrementAndGet();
+                //更新当前的提案（Proposal），id为自己，zxid，epoch都为自己当前的值
                 updateProposal(getInitId(), getInitLastLoggedZxid(), getPeerEpoch());
             }
 
             LOG.info("New election. My id =  " + self.getId() +
                     ", proposed zxid=0x" + Long.toHexString(proposedZxid));
+            //将当前的投票发送给所有有投票权限的服务器，由wsThread负责
             sendNotifications();
 
             SyncedLearnerTracker voteSet;
