@@ -223,7 +223,7 @@ public class QuorumPeerMain {
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           //是否有权投票，PARTICIPANT（默认）可以投票，OBSERVER不能投票
           quorumPeer.setLearnerType(config.getPeerType());
-          //zzz:判断observer是否同步的属性名称(咱不理解什么意思)
+          //zzz:判断observer是否同步的属性名称(暂不理解什么意思)
           quorumPeer.setSyncEnabled(config.getSyncEnabled());
           //Zookeeper服务器是否监听所有可用IP地址的连接，默认false，
           //zzz:暂时不知道干啥用的，好像是会影响运维部署方面的
@@ -241,7 +241,7 @@ public class QuorumPeerMain {
           }
           //连接管理线程数大小
           quorumPeer.setQuorumCnxnThreadsSize(config.quorumCnxnThreadsSize);
-          // 权限管理类，默认不使用
+          //权限管理类，默认不使用
           quorumPeer.initialize();
           //调用start方法启动线程，start方法重写过，有些其他逻辑，最终还是调用的Thread.start
           quorumPeer.start();  

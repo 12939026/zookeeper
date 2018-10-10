@@ -609,6 +609,7 @@ public class QuorumCnxManager {
         /*
          * If sending message to myself, then simply enqueue it (loopback).
          */
+    	//如果是发给自己的 ，直接加入recvQueue就可以了
         if (this.mySid == sid) {
              b.position(0);
              addToRecvQueue(new Message(b.duplicate(), sid));
@@ -627,6 +628,7 @@ public class QuorumCnxManager {
              } else {
                  addToSendQueue(bq, b);
              }
+             //连接到其它服务器
              connectOne(sid);
 
         }
