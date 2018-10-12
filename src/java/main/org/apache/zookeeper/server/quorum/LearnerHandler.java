@@ -370,20 +370,21 @@ public class LearnerHandler extends ZooKeeperThread {
         try {
             leader.addLearnerHandler(this);
             tickOfNextAckDeadline = leader.self.tick.get()
-                    + leader.self.initLimit + leader.self.syncLimit;
+                    + leader.self.initLimit + leader.self.syncLimit;   //超时时间
 
-            ia = BinaryInputArchive.getArchive(bufferedInput);
+            ia = BinaryInputArchive.getArchive(bufferedInput);   
             bufferedOutput = new BufferedOutputStream(sock.getOutputStream());
             oa = BinaryOutputArchive.getArchive(bufferedOutput);
 
             QuorumPacket qp = new QuorumPacket();
-            ia.readRecord(qp, "packet");
-            if(qp.getType() != Leader.FOLLOWERINFO && qp.getType() != Leader.OBSERVERINFO){
+            ia.readRecord(qp, "packet");     //将输入流反序列化为QuorumPacket
+            if(qp.getType() != Leader.FOLLOWERINFO && qp.getType() != Leader.OBSERVERINFO){  //验证来源
                 LOG.error("First packet " + qp.toString()
                         + " is not FOLLOWERINFO or OBSERVERINFO!");
                 return;
             }
 
+            //读取各种信息
             byte learnerInfoData[] = qp.getData();
             if (learnerInfoData != null) {
                 ByteBuffer bbsid = ByteBuffer.wrap(learnerInfoData);
@@ -413,7 +414,7 @@ public class LearnerHandler extends ZooKeeperThread {
             if (qp.getType() == Leader.OBSERVERINFO) {
                   learnerType = LearnerType.OBSERVER;
             }
-
+            
             long lastAcceptedEpoch = ZxidUtils.getEpochFromZxid(qp.getZxid());
 
             long peerLastZxid;

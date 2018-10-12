@@ -1035,11 +1035,11 @@ public class FastLeaderElection implements Election {
                         voteSet = getVoteTracker(
                                 recvset, new Vote(proposedLeader, proposedZxid,
                                         logicalclock.get(), proposedEpoch));
-                        //收取到了集群所有的选票
+                        //收取到了集群一半以上的选票的选票
                         if (voteSet.hasAllQuorums()) {
 
                             // Verify if there is any change in the proposed leader
-                        	// 确保在执行后面逻辑的时候，recvqueue是否又收到了比当前状态更优先的选票
+                        	// 确保在执行后面逻辑的时候，recvqueue是否又收到了新的选票
                             while((n = recvqueue.poll(finalizeWait,
                                     TimeUnit.MILLISECONDS)) != null){
                                 if(totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,

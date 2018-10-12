@@ -390,7 +390,7 @@ public class Leader {
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
                         LearnerHandler fh = new LearnerHandler(s, is, Leader.this);
-                        fh.start();
+                        fh.start();//每次接到信息后，就新开一个线程进行处理
                     } catch (SocketException e) {
                         if (stop) {
                             LOG.info("exception while shutting down acceptor: "
@@ -447,25 +447,25 @@ public class Leader {
      */
     void lead() throws IOException, InterruptedException {
         self.end_fle = Time.currentElapsedTime();
-        long electionTimeTaken = self.end_fle - self.start_fle;
+        long electionTimeTaken = self.end_fle - self.start_fle;  //时间统计
         self.setElectionTimeTaken(electionTimeTaken);
-        ServerMetrics.ELECTION_TIME.add(electionTimeTaken);
+        ServerMetrics.ELECTION_TIME.add(electionTimeTaken);  //信息收集
         LOG.info("LEADING - LEADER ELECTION TOOK - {} {}", electionTimeTaken,
                 QuorumPeer.FLE_TIME_UNIT);
         self.start_fle = 0;
         self.end_fle = 0;
 
-        zk.registerJMX(new LeaderBean(this, zk), self.jmxLocalPeerBean);
+        zk.registerJMX(new LeaderBean(this, zk), self.jmxLocalPeerBean);  //注册jmx
 
         try {
             self.tick.set(0);
-            zk.loadData();
+            zk.loadData();    //从磁盘读取数据
 
             leaderStateSummary = new StateSummary(self.getCurrentEpoch(), zk.getLastProcessedZxid());
 
             // Start thread that waits for connection requests from
             // new followers.
-            cnxAcceptor = new LearnerCnxAcceptor();
+            cnxAcceptor = new LearnerCnxAcceptor(); //用于启动一个连接管理线程，每当接到新的信息，就另外再新起一个线程进行处理
             cnxAcceptor.start();
 
             long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());
