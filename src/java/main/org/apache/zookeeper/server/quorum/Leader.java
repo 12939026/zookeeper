@@ -529,6 +529,7 @@ public class Leader {
              self.setCurrentEpoch(epoch);
 
              try {
+            	 //等待从机确认自己为主机，需要收到一半以上的回应
                  waitForNewLeaderAck(self.getId(), zk.getZxid());
              } catch (InterruptedException e) {
                  shutdown("Waiting for a quorum of followers, only synced with sids: [ "
@@ -553,7 +554,7 @@ public class Leader {
                  }
                  return;
              }
-
+             //启动服务器
              startZkServer();
 
             /**
@@ -593,6 +594,11 @@ public class Leader {
             // If not null then shutdown this leader
             String shutdownMessage = null;
 
+            
+            /*
+             * 这个循环的目的是随时检测从机的活性，若发现有一半以上从机超过一个ticktime
+             * 时间还未回应，则判断集群down了，关闭lead 
+             */
             while (true) {
                 synchronized (this) {
                     long start = Time.currentElapsedTime();
@@ -602,7 +608,7 @@ public class Leader {
                         wait(end - cur);
                         cur = Time.currentElapsedTime();
                     }
-
+                    //tick2个循环增加一次
                     if (!tickSkip) {
                         self.tick.incrementAndGet();
                     }
@@ -633,7 +639,7 @@ public class Leader {
                         shutdownMessage = "Unexpected internal error";
                         break;
                     }
-
+                    //是否收到了一半以上的回应，要是没有，则说明与一半以上的从机断开了，关闭服务
                     if (!tickSkip && !syncedAckSet.hasAllQuorums()) {
                         // Lost quorum of last committed and/or last proposed
                         // config, set shutdown flag
@@ -1283,6 +1289,7 @@ public class Leader {
     // VisibleForTesting
     protected boolean electionFinished = false;
     public void waitForEpochAck(long id, StateSummary ss) throws IOException, InterruptedException {
+    	System.out.println("+++++++++++++++++++" + id + "++++++++++++++++++++++++++++++++++++");
         synchronized(electingFollowers) {
             if (electionFinished) {
                 return;
@@ -1296,19 +1303,20 @@ public class Leader {
                                                     + " (last zxid)");
                 }
                 if (ss.getLastZxid() != -1 && isParticipant(id)) {
-                    electingFollowers.add(id);
+                    electingFollowers.add(id);     //投票的follower
                 }
             }
             QuorumVerifier verifier = self.getQuorumVerifier();
+            //一半以上投票
             if (electingFollowers.contains(self.getId()) && verifier.containsQuorum(electingFollowers)) {
-                electionFinished = true;
-                electingFollowers.notifyAll();
+                electionFinished = true;    //投票完毕
+                electingFollowers.notifyAll();   //唤醒下面的wait，一起结束线程 
             } else {
                 long start = Time.currentElapsedTime();
                 long cur = start;
                 long end = start + self.getInitLimit()*self.getTickTime();
                 while(!electionFinished && cur < end) {
-                    electingFollowers.wait(end - cur);
+                    electingFollowers.wait(end - cur);  //等待其他投票线程唤醒
                     cur = Time.currentElapsedTime();
                 }
                 if (!electionFinished) {
@@ -1353,7 +1361,7 @@ public class Leader {
          *  config to itself.
          */
         QuorumVerifier newQV = self.getLastSeenQuorumVerifier();
-
+        //zzz：后面看
         Long designatedLeader = getDesignatedLeader(newLeaderProposal, zk.getZxid());
 
         self.processReconfig(newQV, designatedLeader, zk.getZxid(), true);
@@ -1405,7 +1413,7 @@ public class Leader {
              * is a PARTICIPANT.
              */
             newLeaderProposal.addAck(sid);
-
+            //依旧以收到一半回应为OK，不然就等待一个超时的时间
             if (newLeaderProposal.hasAllQuorums()) {
                 quorumFormed = true;
                 newLeaderProposal.qvAcksetPairs.notifyAll();

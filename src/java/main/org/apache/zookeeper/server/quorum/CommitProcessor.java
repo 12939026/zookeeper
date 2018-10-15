@@ -180,7 +180,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                     synchronized (this) {
                         while (!stopped && requestsToProcess == 0
                                 && !commitIsWaiting) {
-                            wait();
+                            wait();                  //request为空的时候就等待新的请求，直到有
                             commitIsWaiting = !committedRequests.isEmpty();
                             requestsToProcess = queuedRequests.size();
                         }
@@ -196,7 +196,8 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                 while (!stopped && requestsToProcess > 0
                         && (request = queuedRequests.poll()) != null) {
                     requestsToProcess--;
-                    if (needCommit(request)
+                    if (needCommit(request)    //是否事务请求
+                    		//是否挂起的请求（挂起的请求时只需要等待从机投票的请求）
                             || pendingRequests.containsKey(request.sessionId)) {
                         // Add request to pending
                         LinkedList<Request> requests = pendingRequests
@@ -208,7 +209,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                         requests.addLast(request);
                     }
                     else {
-                        sendToNextProcessor(request);
+                        sendToNextProcessor(request); //将request发往下一个processor处理
                     }
                     /*
                      * Stop feeding the pool if there is a local pending update

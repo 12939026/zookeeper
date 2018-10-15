@@ -43,6 +43,7 @@ class AckRequestProcessor implements RequestProcessor {
     public void processRequest(Request request) {
         QuorumPeer self = leader.self;
         if(self != null)
+        	//向proposal的投票收集器发送ack反馈，表明主机已经处理好日志了
             leader.processAck(self.getId(), request.zxid, null);
         else
             LOG.error("Null QuorumPeer");

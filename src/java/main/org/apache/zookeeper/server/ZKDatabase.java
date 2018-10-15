@@ -73,6 +73,7 @@ public class ZKDatabase {
     protected DataTree dataTree;
     protected ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;
     protected FileTxnSnapLog snapLog;
+    //最旧和最新的commitlog，注意因为最多保存500条,@commitLogCount,所以minCommittedLog最多是500条之前的log
     protected long minCommittedLog, maxCommittedLog;
 
     /**

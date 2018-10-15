@@ -67,19 +67,23 @@ public class ProposalRequestProcessor implements RequestProcessor {
          * contain the handler. In this case, we add it to syncHandler, and
          * call processRequest on the next processor.
          */
-
+    	//zzz:?
         if (request instanceof LearnerSyncRequest){
             zks.getLeader().processSync((LearnerSyncRequest)request);
-        } else {
+        } 
+        //其他请求
+        else {
+        	//交给下个处理器（CommitProcessor）处理
             nextProcessor.processRequest(request);
+            //事务请求
             if (request.getHdr() != null) {
                 // We need to sync and get consensus on any transactions
                 try {
-                    zks.getLeader().propose(request);
+                    zks.getLeader().propose(request); //将这个请求发给集群中的从机进行投票
                 } catch (XidRolloverException e) {
                     throw new RequestProcessorException(e.getMessage(), e);
                 }
-                syncProcessor.processRequest(request);
+                syncProcessor.processRequest(request);//记录事务日志的Processor
             }
         }
     }

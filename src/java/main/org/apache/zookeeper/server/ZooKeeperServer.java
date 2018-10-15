@@ -472,6 +472,10 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         }
         startSessionTracker();
         //设置处理链,单机zk的处理链为PrepRequestProcessor-->SyncRequestProcessor-->FinalRequestProcessor
+        //集群zkleader服务器的处理链为PrepRequestProcessor-->ProposalRequestProcessor-->CommitProcessor
+        //-->ToBeAppliedRequestProcessor-->FinalRequestProcessor 
+        //特别的，如果是事务请求，在ProposalRequestProcessor后面会另起一个线程来同时走另一个处理链
+        //ProposalRequestProcessor-->SyncRequestProcessor-->AckRequestProcessor
         setupRequestProcessors();
 
         //注册JMX，这样通过jconsole等工具可以看到zk的一些信息
