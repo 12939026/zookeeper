@@ -649,6 +649,7 @@ public class Leader {
                     }
                     tickSkip = !tickSkip;
                 }
+                //ping所有的learner
                 for (LearnerHandler f : getLearners()) {
                     f.ping();
                 }

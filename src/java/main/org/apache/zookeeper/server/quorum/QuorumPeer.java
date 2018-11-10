@@ -1213,8 +1213,9 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 case FOLLOWING:
                     try {
                        LOG.info("FOLLOWING");
+                       //创建一个follower类
                         setFollower(makeFollower(logFactory));
-                        follower.followLeader();
+                        follower.followLeader();  //foller主逻辑
                     } catch (Exception e) {
                        LOG.warn("Unexpected exception",e);
                     } finally {

@@ -67,15 +67,15 @@ public class Follower extends Learner{
     void followLeader() throws InterruptedException {
         self.end_fle = Time.currentElapsedTime();
         long electionTimeTaken = self.end_fle - self.start_fle;
-        self.setElectionTimeTaken(electionTimeTaken);
-        ServerMetrics.ELECTION_TIME.add(electionTimeTaken);
+        self.setElectionTimeTaken(electionTimeTaken);   
+        ServerMetrics.ELECTION_TIME.add(electionTimeTaken);   //计算并统计选举花费的时间
         LOG.info("FOLLOWING - LEADER ELECTION TOOK - {} {}", electionTimeTaken,
                 QuorumPeer.FLE_TIME_UNIT);
         self.start_fle = 0;
         self.end_fle = 0;
-        fzk.registerJMX(new FollowerBean(this, zk), self.jmxLocalPeerBean);
+        fzk.registerJMX(new FollowerBean(this, zk), self.jmxLocalPeerBean);  //注册jmx
         try {
-            QuorumServer leaderServer = findLeader();
+            QuorumServer leaderServer = findLeader();    //根据最新的选票信息来构建主服务器
             try {
                 connectToLeader(leaderServer.addr, leaderServer.hostname);
                 long newEpochZxid = registerWithLeader(Leader.FOLLOWERINFO);

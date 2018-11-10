@@ -245,25 +245,25 @@ public class Learner {
         sock = new Socket();        
         sock.setSoTimeout(self.tickTime * self.initLimit);
 
-        int initLimitTime = self.tickTime * self.initLimit;
-        int remainingInitLimitTime = initLimitTime;
+        int initLimitTime = self.tickTime * self.initLimit;   //最长启动时间
+        int remainingInitLimitTime = initLimitTime;   //剩余时间
         long startNanoTime = nanoTime();
 
         for (int tries = 0; tries < 5; tries++) {
             try {
                 // recalculate the init limit time because retries sleep for 1000 milliseconds
                 remainingInitLimitTime = initLimitTime - (int)((nanoTime() - startNanoTime) / 1000000);
-                if (remainingInitLimitTime <= 0) {
+                if (remainingInitLimitTime <= 0) {   //达到启动时间，就抛出异常
                     LOG.error("initLimit exceeded on retries.");
                     throw new IOException("initLimit exceeded on retries.");
                 }
-
+                //建立socket连接
                 sockConnect(sock, addr, Math.min(self.tickTime * self.syncLimit, remainingInitLimitTime));
                 sock.setTcpNoDelay(nodelay);
                 break;
             } catch (IOException e) {
                 remainingInitLimitTime = initLimitTime - (int)((nanoTime() - startNanoTime) / 1000000);
-
+                //根据异常的种类，跑出各种异常或者继续处理
                 if (remainingInitLimitTime <= 1000) {
                     LOG.error("Unexpected exception, initLimit exceeded. tries=" + tries +
                              ", remaining init limit=" + remainingInitLimitTime +
@@ -285,12 +285,12 @@ public class Learner {
             Thread.sleep(1000);
         }
 
-        self.authLearner.authenticate(sock, hostname);
+        self.authLearner.authenticate(sock, hostname);  //zzz:权限验证
 
         leaderIs = BinaryInputArchive.getArchive(new BufferedInputStream(
-                sock.getInputStream()));
+                sock.getInputStream()));    //jute的输入流反序列化工具类
         bufferedOutput = new BufferedOutputStream(sock.getOutputStream());
-        leaderOs = BinaryOutputArchive.getArchive(bufferedOutput);
+        leaderOs = BinaryOutputArchive.getArchive(bufferedOutput);//jute的输出流序列化工具类
     }   
     
     /**
