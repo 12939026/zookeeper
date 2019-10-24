@@ -148,7 +148,8 @@ public class QuorumPeerMain {
       }
 
       LOG.info("Starting quorum peer");
-      //监控信息，和单机版一样
+      //监控信息，和单机版一样 11
+      
       MetricsProvider metricsProvider;
       try {
         metricsProvider = MetricsProviderBootstrap
