@@ -74,6 +74,7 @@ public class QuorumPeerMain {
 
     private static final String USAGE = "Usage: QuorumPeerMain configfile";
 
+    //集群中的某一台服務器
     protected QuorumPeer quorumPeer;
 
     /**
@@ -148,8 +149,7 @@ public class QuorumPeerMain {
       }
 
       LOG.info("Starting quorum peer");
-      //监控信息，和单机版一样 11
-      
+      //监控信息，和单机版一样       
       MetricsProvider metricsProvider;
       try {
         metricsProvider = MetricsProviderBootstrap
@@ -231,7 +231,7 @@ public class QuorumPeerMain {
           quorumPeer.setQuorumListenOnAllIPs(config.getQuorumListenOnAllIPs());
 
           // sets quorum sasl authentication configurations
-          // zzz:权限相关配置，后面在研究
+          // 权限相关配置
           quorumPeer.setQuorumSaslEnabled(config.quorumEnableSasl);
           if(quorumPeer.isQuorumSaslAuthEnabled()){
               quorumPeer.setQuorumServerSaslRequired(config.quorumServerRequireSasl);

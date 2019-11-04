@@ -70,7 +70,7 @@ public class QuorumPeerConfig {
     protected InetSocketAddress clientPortAddress;            //对外服务的端口号
     protected InetSocketAddress secureClientPortAddress;
     protected File dataDir;                             //快照文件的目录
-    protected File dataLogDir;
+    protected File dataLogDir;                          //事务日志文件的目录
     protected String dynamicConfigFileStr = null;
     protected String configFileStr = null;
     protected int tickTime = ZooKeeperServer.DEFAULT_TICK_TIME;   //最小时间单元
