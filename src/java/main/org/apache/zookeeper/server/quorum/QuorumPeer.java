@@ -1182,14 +1182,15 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                         }
                     } else {
                         try {
-                           //zzz:reconfigFlag置为false？
+                           //reconfigFlag置为false,reconfigFlag标明了当前服务的角色有没有变化过。
                            reconfigFlagClear();
-                           //一般是false，如果true就重新启动选主线程
+                           //选举流程是否已经结束了，如果true就重新启动选主线程，在选举完成或者异常情况下会为TRUE，重新选举
                             if (shuttingDownLE) {
                                shuttingDownLE = false;
                                startLeaderElection();
                                }
-                            //主要逻辑在lookForLeader中,并将其设为当前的选票
+                            //主要逻辑在lookForLeader中,并将其设为当前的选票，
+                            //makeLEStrategy是获取选举算法，默认为fast leader election,也是目前唯一的非过期算法。
                             setCurrentVote(makeLEStrategy().lookForLeader());
                         } catch (Exception e) {
                             LOG.warn("Unexpected exception", e);

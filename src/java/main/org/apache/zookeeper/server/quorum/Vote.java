@@ -83,11 +83,11 @@ public class Vote {
         this.version = 0x0;
     }
 
-    final private int version;
+    final private int version;    //整个工程里没有修改version的地方，包括构造方法
 
-    final private long id;
+    final private long id;        //被选举的ID
     
-    final private long zxid;
+    final private long zxid;      
     
     final private long electionEpoch;
     

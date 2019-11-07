@@ -70,9 +70,9 @@ public class ZKDatabase {
      * make sure on a clear you take care of
      * all these members.
      */
-    protected DataTree dataTree;
-    protected ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;
-    protected FileTxnSnapLog snapLog;
+    protected DataTree dataTree;                        //内存数据数据结构
+    protected ConcurrentHashMap<Long, Integer> sessionsWithTimeouts;   //session列表
+    protected FileTxnSnapLog snapLog;              //本地磁盘日志文件和快照文件的映射类
     //最旧和最新的commitlog，注意因为最多保存500条,@commitLogCount,所以minCommittedLog最多是500条之前的log
     protected long minCommittedLog, maxCommittedLog;
 
@@ -96,7 +96,7 @@ public class ZKDatabase {
      * @param snapLog the FileTxnSnapLog mapping this zkdatabase
      */
     public ZKDatabase(FileTxnSnapLog snapLog) {
-        dataTree = createDataTree();
+        dataTree = createDataTree();                 //new一个dataNode
         sessionsWithTimeouts = new ConcurrentHashMap<Long, Integer>();
         this.snapLog = snapLog;
 

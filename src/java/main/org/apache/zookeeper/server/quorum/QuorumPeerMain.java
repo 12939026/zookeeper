@@ -188,7 +188,7 @@ public class QuorumPeerMain {
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
                       config.getDataLogDir(),
                       config.getDataDir()));
-          //zzz:本地session？ 暂不明白是干啥用的
+          //zzz:本地session？ 猜测是优化性能用的。
           quorumPeer.enableLocalSessions(config.areLocalSessionsEnabled());
           quorumPeer.enableLocalSessionsUpgrading(
               config.isLocalSessionsUpgradingEnabled());
