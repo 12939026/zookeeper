@@ -484,7 +484,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
         //状态置为running
         setState(State.RUNNING);
         
-        //唤醒该类上的所有等待？ 在哪里，没看见？
+        //唤醒该类上的所有等待
         notifyAll();
     }
 

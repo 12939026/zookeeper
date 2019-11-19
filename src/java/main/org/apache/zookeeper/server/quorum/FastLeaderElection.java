@@ -216,7 +216,7 @@ public class FastLeaderElection implements Election {
          * method run(), and processes such messages.
          */
 
-    	//zzz:后面有空再慢慢研究，大致就是接受信息并做初步处理的线程
+    	//接受信息并做初步处理的线程
         class WorkerReceiver extends ZooKeeperThread  {
             volatile boolean stop;
             QuorumCnxManager manager;
@@ -510,13 +510,13 @@ public class FastLeaderElection implements Election {
          */
         Messenger(QuorumCnxManager manager) {
 
-            this.ws = new WorkerSender(manager);
+            this.ws = new WorkerSender(manager);    //发送选票的线程
 
             this.wsThread = new Thread(this.ws,
                     "WorkerSender[myid=" + self.getId() + "]");
             this.wsThread.setDaemon(true);
 
-            this.wr = new WorkerReceiver(manager);
+            this.wr = new WorkerReceiver(manager);   //收取选票的线程
 
             this.wrThread = new Thread(this.wr,
                     "WorkerReceiver[myid=" + self.getId() + "]");
@@ -713,7 +713,7 @@ public class FastLeaderElection implements Election {
     /**
      * Check if a pair (server id, zxid) succeeds our
      * current vote.
-     * 校验新选票的有效性
+     * 新选票和当前选票PK
      * 逻辑如下面的英文注释
      * 1. 新的纪元大于原来的
      * 2. 纪元相同，新的zxid大于原来的
@@ -913,7 +913,7 @@ public class FastLeaderElection implements Election {
            self.start_fle = Time.currentElapsedTime();
         }
         try {
-            Map<Long, Vote> recvset = new HashMap<Long, Vote>();
+            Map<Long, Vote> recvset = new HashMap<Long, Vote>();    //收到的选票
 
             Map<Long, Vote> outofelection = new HashMap<Long, Vote>();
 
@@ -928,7 +928,7 @@ public class FastLeaderElection implements Election {
 
             LOG.info("New election. My id =  " + self.getId() +
                     ", proposed zxid=0x" + Long.toHexString(proposedZxid));
-            //将当前的投票发送给所有有投票权限的服务器，由wsThread负责
+            //将当前的投票发送给所有有投票权限的服务器，由wsThread负责发送
             sendNotifications();
 
             SyncedLearnerTracker voteSet;
@@ -938,7 +938,7 @@ public class FastLeaderElection implements Election {
              */
 
             while ((self.getPeerState() == ServerState.LOOKING) &&
-                    (!stop)){
+                    (!stop)){ 
                 /*
                  * Remove next notification from queue, times out after 2 times
                  * the termination time
@@ -991,7 +991,7 @@ public class FastLeaderElection implements Election {
                         if (n.electionEpoch > logicalclock.get()) {
                             logicalclock.set(n.electionEpoch);
                             recvset.clear();
-                            //校验新提案的有效性
+                            //比较自己的选票和新选票
                             if(totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,
                                     getInitId(), getInitLastLoggedZxid(), getPeerEpoch())) {
                             	//将提案更新为收获的提案
@@ -1040,6 +1040,7 @@ public class FastLeaderElection implements Election {
 
                             // Verify if there is any change in the proposed leader
                         	// 确保在执行后面逻辑的时候，recvqueue是否又收到了新的选票
+                        	// 收到新的就比较和当前选票，如果新的选票更加领先就从头执行，否则放弃
                             while((n = recvqueue.poll(finalizeWait,
                                     TimeUnit.MILLISECONDS)) != null){
                                 if(totalOrderPredicate(n.leader, n.zxid, n.peerEpoch,

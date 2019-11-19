@@ -126,7 +126,10 @@ public class SerializeUtils {
 
     public static void deserializeSnapshot(DataTree dt,InputArchive ia,
             Map<Long, Integer> sessions) throws IOException {
-        int count = ia.readInt("count");
+        /*
+         * 先从快照中将session复原
+         */
+    	int count = ia.readInt("count");       
         while (count > 0) {
             long id = ia.readLong("id");
             int to = ia.readInt("timeout");
@@ -138,7 +141,7 @@ public class SerializeUtils {
             }
             count--;
         }
-        dt.deserialize(ia, "tree");
+        dt.deserialize(ia, "tree"); //解析datatree
     }
 
     public static void serializeSnapshot(DataTree dt,OutputArchive oa,

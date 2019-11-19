@@ -856,9 +856,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
          }
         //将数据读取到内存中
         loadDataBase();
-        //开启cnxnFactory线程
+        //开启cnxnFactory线程,这里默认的是NIO连接池，新版本默认的netty
         startServerCnxnFactory();
         //开启jetty服务
+        // 启动可以通过http://127.0.0.1:8080/commands查看一些当前的设置信息
         try {
             adminServer.start();
         } catch (AdminServerException e) {
@@ -873,13 +874,13 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
 
     private void loadDataBase() {
         try {
-            zkDb.loadDataBase();
+            zkDb.loadDataBase();  //将快照和事务日志文件从磁盘加载到内存的datatree里面
 
             // load the epochs
             long lastProcessedZxid = zkDb.getDataTree().lastProcessedZxid;
-            long epochOfZxid = ZxidUtils.getEpochFromZxid(lastProcessedZxid);
+            long epochOfZxid = ZxidUtils.getEpochFromZxid(lastProcessedZxid); //获取epochs，高位的是纪元，每进行一次选主，纪元+1
             try {
-                currentEpoch = readLongFromFile(CURRENT_EPOCH_FILENAME);
+                currentEpoch = readLongFromFile(CURRENT_EPOCH_FILENAME);   //当前epoch
             } catch(FileNotFoundException e) {
             	// pick a reasonable epoch number
             	// this should only happen once when moving to a
@@ -888,18 +889,18 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
             	LOG.info(CURRENT_EPOCH_FILENAME
             	        + " not found! Creating with a reasonable default of {}. This should only happen when you are upgrading your installation",
             	        currentEpoch);
-            	writeLongToFile(CURRENT_EPOCH_FILENAME, currentEpoch);
+            	writeLongToFile(CURRENT_EPOCH_FILENAME, currentEpoch);   //没有文件就新建
             }
             if (epochOfZxid > currentEpoch) {
                 throw new IOException("The current epoch, " + ZxidUtils.zxidToString(currentEpoch) + ", is older than the last zxid, " + lastProcessedZxid);
             }
             try {
-                acceptedEpoch = readLongFromFile(ACCEPTED_EPOCH_FILENAME);
+                acceptedEpoch = readLongFromFile(ACCEPTED_EPOCH_FILENAME);    //accept的epoch
             } catch(FileNotFoundException e) {
             	// pick a reasonable epoch number
             	// this should only happen once when moving to a
             	// new code version
-            	acceptedEpoch = epochOfZxid;
+            	acceptedEpoch = epochOfZxid;  //没有文件就新建
             	LOG.info(ACCEPTED_EPOCH_FILENAME
             	        + " not found! Creating with a reasonable default of {}. This should only happen when you are upgrading your installation",
             	        acceptedEpoch);
@@ -1098,7 +1099,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
         	//注册jmx
             jmxQuorumBean = new QuorumBean(this);
             MBeanRegistry.getInstance().register(jmxQuorumBean, null);
-            //根据是否本机还是其他机器不同的注册逻辑
+            //根据是否本机还是其他机器不同的注册逻辑,都是些mbean的东西。
             for(QuorumServer s: getView().values()){
                 ZKMBeanInfo p;
                 if (getId() == s.id) {
@@ -1133,8 +1134,8 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
                 switch (getPeerState()) {
                 case LOOKING:
                     LOG.info("LOOKING");
-                    ServerMetrics.LOOKING_COUNT.add(1);
-                    //zzz:是否只读模式，只读模式后面在研究
+                    ServerMetrics.LOOKING_COUNT.add(1);  //计数
+                    //是否只读模式，只读模式的意思是即使服务器已经不在集群里，依然可以从服务器读取信息，但是不能写入
                     if (Boolean.getBoolean("readonlymode.enabled")) {
                         LOG.info("Attempting to start ReadOnlyZooKeeperServer");
 
@@ -1713,10 +1714,10 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
 
     private void startServerCnxnFactory() {
-        if (cnxnFactory != null) {
+        if (cnxnFactory != null) {         //底层连接池
             cnxnFactory.start();
         }
-        if (secureCnxnFactory != null) {
+        if (secureCnxnFactory != null) {  //处理SSL的底层连接池，默认不开启
             secureCnxnFactory.start();
         }
     }
@@ -1741,7 +1742,7 @@ public class QuorumPeer extends ZooKeeperThread implements QuorumStats.Provider 
     }
 
     public void closeAllConnections() {
-        if (cnxnFactory != null) {
+        if (cnxnFactory != null) {  
             cnxnFactory.closeAll();
         }
         if (secureCnxnFactory != null) {

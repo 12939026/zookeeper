@@ -125,9 +125,9 @@ public abstract class ServerCnxnFactory {
     
     static public ServerCnxnFactory createFactory() throws IOException {
         String serverCnxnFactoryName =
-            System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY);
+            System.getProperty(ZOOKEEPER_SERVER_CNXN_FACTORY);   //通过ZOOKEEPER_SERVER_CNXN_FACTORY配置通信的实现类
         if (serverCnxnFactoryName == null) {
-            serverCnxnFactoryName = NIOServerCnxnFactory.class.getName();
+            serverCnxnFactoryName = NIOServerCnxnFactory.class.getName();  //默认使用NIO实现
         }
         try {
             ServerCnxnFactory serverCnxnFactory = (ServerCnxnFactory) Class.forName(serverCnxnFactoryName)

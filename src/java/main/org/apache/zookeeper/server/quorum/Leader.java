@@ -468,7 +468,7 @@ public class Leader {
             cnxAcceptor = new LearnerCnxAcceptor(); //用于启动一个连接管理线程，每当接到新的信息，就另外再新起一个线程进行处理
             cnxAcceptor.start();
 
-            long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());
+            long epoch = getEpochToPropose(self.getId(), self.getAcceptedEpoch());  
 
             zk.setZxid(ZxidUtils.makeZxid(epoch, 0));
 

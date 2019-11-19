@@ -73,8 +73,8 @@ public class FileSnap implements SnapShot {
         // we run through 100 snapshots (not all of them)
         // if we cannot get it running within 100 snapshots
         // we should  give up
-    	//读取100个文件
-        List<File> snapList = findNValidSnapshots(100);
+    	//读取100个快照文件，从中还原数据库，如果100个文件都有问题，那就放弃，启动失败。
+        List<File> snapList = findNValidSnapshots(100);   
         if (snapList.size() == 0) {
             return -1L;
         }
@@ -86,10 +86,10 @@ public class FileSnap implements SnapShot {
             try (InputStream snapIS = new BufferedInputStream(new FileInputStream(snap));
                  CheckedInputStream crcIn = new CheckedInputStream(snapIS, new Adler32())) {
                 InputArchive ia = BinaryInputArchive.getArchive(crcIn);
-                deserialize(dt, sessions, ia);
+                deserialize(dt, sessions, ia);         //解析主类，将快照解析成内存datatree
                 long checkSum = crcIn.getChecksum().getValue();
                 long val = ia.readLong("val");
-                if (val != checkSum) {
+                if (val != checkSum) {              //一般来说，校验码没错的话，第一个文件就能解决问题，后面99个不需要继续读取
                     throw new IOException("CRC corruption in snapshot :  " + snap);
                 }
                 foundValid = true;
@@ -101,7 +101,7 @@ public class FileSnap implements SnapShot {
         if (!foundValid) {
             throw new IOException("Not able to find valid snapshots in " + snapDir);
         }
-        dt.lastProcessedZxid = Util.getZxidFromName(snap.getName(), SNAPSHOT_FILE_PREFIX);
+        dt.lastProcessedZxid = Util.getZxidFromName(snap.getName(), SNAPSHOT_FILE_PREFIX); //从文件名中获取zxid，这个是当前快照的最新zxid
         return dt.lastProcessedZxid;
     }
 
@@ -114,14 +114,14 @@ public class FileSnap implements SnapShot {
      */
     public void deserialize(DataTree dt, Map<Long, Integer> sessions,
             InputArchive ia) throws IOException {
-        FileHeader header = new FileHeader();
+        FileHeader header = new FileHeader();  //文件头，包括魔数，版本等信息
         header.deserialize(ia, "fileheader");
         if (header.getMagic() != SNAP_MAGIC) {
             throw new IOException("mismatching magic headers "
                     + header.getMagic() +
                     " !=  " + FileSnap.SNAP_MAGIC);
         }
-        SerializeUtils.deserializeSnapshot(dt,ia,sessions);
+        SerializeUtils.deserializeSnapshot(dt,ia,sessions); //主要的解析方法
     }
 
     /**

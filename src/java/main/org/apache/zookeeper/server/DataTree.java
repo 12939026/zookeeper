@@ -89,6 +89,7 @@ public class DataTree {
     /**
      * This hashtable provides a fast lookup to the datanodes. The tree is the
      * source of truth and is where all the locking occurs
+     * 存储node的hashmap，基本读写最核心的就是操作这个
      */
     private final ConcurrentHashMap<String, DataNode> nodes =
         new ConcurrentHashMap<String, DataNode>();
@@ -136,6 +137,7 @@ public class DataTree {
 
     /**
      * This hashtable lists the paths of the ephemeral nodes of a session.
+     * 临时节点
      */
     private final Map<Long, HashSet<String>> ephemerals =
         new ConcurrentHashMap<Long, HashSet<String>>();
@@ -1258,12 +1260,12 @@ public class DataTree {
     }
 
     public void deserialize(InputArchive ia, String tag) throws IOException {
-        aclCache.deserialize(ia);
-        nodes.clear();
+        aclCache.deserialize(ia);    //权限控制
+        nodes.clear();            
         pTrie.clear();
         nodeDataSize.set(0);
         String path = ia.readString("path");
-        while (!"/".equals(path)) {
+        while (!"/".equals(path)) {    //从流中复原出datanodetree
             DataNode node = new DataNode();
             ia.readRecord(node, "node");
             nodes.put(path, node);
@@ -1281,7 +1283,7 @@ public class DataTree {
                             "parent " + parentPath + " of path " + path);
                 }
                 parent.addChild(path.substring(lastSlash + 1));
-                long eowner = node.stat.getEphemeralOwner();
+                long eowner = node.stat.getEphemeralOwner();    //session
                 EphemeralType ephemeralType = EphemeralType.get(eowner);
                 if (ephemeralType == EphemeralType.CONTAINER) {
                     containers.add(path);

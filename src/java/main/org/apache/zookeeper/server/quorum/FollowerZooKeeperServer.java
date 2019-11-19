@@ -86,7 +86,7 @@ public class FollowerZooKeeperServer extends LearnerZooKeeperServer {
         if ((request.zxid & 0xffffffffL) != 0) {
             pendingTxns.add(request);
         }
-        syncProcessor.processRequest(request);
+        syncProcessor.processRequest(request);  //并加入syncProcessor的处理链
     }
 
     /**

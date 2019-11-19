@@ -78,7 +78,7 @@ public class Follower extends Learner{
             QuorumServer leaderServer = findLeader();    //根据最新的选票信息来构建主服务器
             try {
                 connectToLeader(leaderServer.addr, leaderServer.hostname);
-                long newEpochZxid = registerWithLeader(Leader.FOLLOWERINFO);
+                long newEpochZxid = registerWithLeader(Leader.FOLLOWERINFO);   //向leader注册
                 if (self.isReconfigStateChange())
                    throw new Exception("learned about role change");
                 //check to see if the leader zxid is lower than ours
@@ -91,15 +91,15 @@ public class Follower extends Learner{
                 }
                 long startTime = Time.currentElapsedTime();
                 try {
-                    syncWithLeader(newEpochZxid);
+                    syncWithLeader(newEpochZxid);              //和leader进行数据同步
                 } finally {
                     long syncTime = Time.currentElapsedTime() - startTime;
                     ServerMetrics.FOLLOWER_SYNC_TIME.add(syncTime);
                 }
                 QuorumPacket qp = new QuorumPacket();
-                while (this.isRunning()) {
-                    readPacket(qp);
-                    processPacket(qp);
+                while (this.isRunning()) {   //不发生选主，重启等特殊情况，就会在这里一直循环
+                    readPacket(qp);      //读包
+                    processPacket(qp);   //处理包
                 }
             } catch (Exception e) {
                 LOG.warn("Exception when following the leader", e);
@@ -124,10 +124,10 @@ public class Follower extends Learner{
      */
     protected void processPacket(QuorumPacket qp) throws Exception{
         switch (qp.getType()) {
-        case Leader.PING:            
+        case Leader.PING:            //心跳请求  （同步客户端的连接情况） 
             ping(qp);            
             break;
-        case Leader.PROPOSAL:           
+        case Leader.PROPOSAL:         //提案消息
             TxnHeader hdr = new TxnHeader();
             Record txn = SerializeUtils.deserializeTxn(qp.getData(), hdr);
             if (hdr.getZxid() != lastQueued + 1) {
@@ -136,7 +136,7 @@ public class Follower extends Learner{
                         + " expected 0x"
                         + Long.toHexString(lastQueued + 1));
             }
-            lastQueued = hdr.getZxid();
+            lastQueued = hdr.getZxid();  //最新的zxid
             
             if (hdr.getType() == OpCode.reconfig){
                SetDataTxn setDataTxn = (SetDataTxn) txn;       
@@ -144,10 +144,10 @@ public class Follower extends Learner{
                self.setLastSeenQuorumVerifier(qv, true);                               
             }
             
-            fzk.logRequest(hdr, txn);
+            fzk.logRequest(hdr, txn);   //进入log处理链
             break;
         case Leader.COMMIT:
-            fzk.commit(qp.getZxid());
+            fzk.commit(qp.getZxid());   //提交
             break;
             
         case Leader.COMMITANDACTIVATE:

@@ -50,10 +50,10 @@ import org.slf4j.LoggerFactory;
 public class FileTxnSnapLog {
     //the directory containing the
     //the transaction logs
-    final File dataDir;
+    final File dataDir;              //事务日志目录
     //the directory containing the
     //the snapshot directory
-    final File snapDir;
+    final File snapDir;              //快照日志目录
     TxnLog txnLog;
     SnapShot snapLog;
     private final boolean autoCreateDB;
@@ -211,17 +211,17 @@ public class FileTxnSnapLog {
      */
     public long restore(DataTree dt, Map<Long, Integer> sessions,
                         PlayBackListener listener) throws IOException {
-        long deserializeResult = snapLog.deserialize(dt, sessions);
-        FileTxnLog txnLog = new FileTxnLog(dataDir);
+        long deserializeResult = snapLog.deserialize(dt, sessions); //先从快照文件中解析，若没有文件，说明是新启动的，返回-1，若100个文件都坏了，抛出异常
+        FileTxnLog txnLog = new FileTxnLog(dataDir);        //日志文件
         boolean trustEmptyDB;
-        File initFile = new File(dataDir.getParent(), "initialize");
+        File initFile = new File(dataDir.getParent(), "initialize");     //初始化文件
         if (Files.deleteIfExists(initFile.toPath())) {
             LOG.info("Initialize file found, an empty database will not block voting participation");
             trustEmptyDB = true;
         } else {
-            trustEmptyDB = autoCreateDB;
+            trustEmptyDB = autoCreateDB;             
         }
-        if (-1L == deserializeResult) {
+        if (-1L == deserializeResult) {      //这个说明了还没有快照文件
             /* this means that we couldn't find any snapshot, so we need to
              * initialize an empty database (reported in ZOOKEEPER-2325) */
             if (txnLog.getLastLoggedZxid() != -1) {
@@ -233,7 +233,7 @@ public class FileTxnSnapLog {
             if (trustEmptyDB) {
                 /* TODO: (br33d) we should either put a ConcurrentHashMap on restore()
                  *       or use Map on save() */
-                save(dt, (ConcurrentHashMap<Long, Integer>)sessions, false);
+                save(dt, (ConcurrentHashMap<Long, Integer>)sessions, false); //生成新的快照文件
 
                 /* return a zxid of 0, since we know the database is empty */
                 return 0L;
@@ -260,7 +260,7 @@ public class FileTxnSnapLog {
      */
     public long fastForwardFromEdits(DataTree dt, Map<Long, Integer> sessions,
                                      PlayBackListener listener) throws IOException {
-        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1);
+        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1);  //从前面的最大zxid后一个开始读取事务
         long highestZxid = dt.lastProcessedZxid;
         TxnHeader hdr;
         try {
@@ -284,7 +284,7 @@ public class FileTxnSnapLog {
                    throw new IOException("Failed to process transaction type: " +
                          hdr.getType() + " error: " + e.getMessage(), e);
                 }
-                listener.onTxnLoaded(hdr, itr.getTxn());
+                listener.onTxnLoaded(hdr, itr.getTxn());   //回调listner
                 if (!itr.next())
                     break;
             }
