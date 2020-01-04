@@ -342,7 +342,7 @@ public class Learner {
         	QuorumPacket ackNewEpoch = new QuorumPacket(Leader.ACKEPOCH, lastLoggedZxid, epochBytes, null); //回应主机的ACK
         	writePacket(ackNewEpoch, true);
             return ZxidUtils.makeZxid(newEpoch, 0);
-        } else {//第一次连接收到的应该是NEWLEADER
+        } else {//NEWLEADER表示leader已经收到大多数回应，开始正式开启服务
         	if (newEpoch > self.getAcceptedEpoch()) {
         		self.setAcceptedEpoch(newEpoch);
         	}

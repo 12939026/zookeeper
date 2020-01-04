@@ -535,7 +535,7 @@ public class LearnerHandler extends ZooKeeperThread {
             /*
              * Wait until leader starts up
              */
-            //等待启动
+            //等待leader启动
             synchronized(leader.zk){
                 while(!leader.zk.isRunning() && !this.isInterrupted()){
                     leader.zk.wait(20);
@@ -590,7 +590,7 @@ public class LearnerHandler extends ZooKeeperThread {
                         leader.zk.touch(sess, to);
                     }
                     break;
-                case Leader.REVALIDATE:
+                case Leader.REVALIDATE:  //询问session是否存活
                     bis = new ByteArrayInputStream(qp.getData());
                     dis = new DataInputStream(bis);
                     long id = dis.readLong();
@@ -620,7 +620,7 @@ public class LearnerHandler extends ZooKeeperThread {
                     qp.setData(bos.toByteArray());
                     queuedPackets.add(qp);
                     break;
-                case Leader.REQUEST:
+                case Leader.REQUEST:   //正式请求
                     bb = ByteBuffer.wrap(qp.getData());
                     sessionId = bb.getLong();
                     cxid = bb.getInt();

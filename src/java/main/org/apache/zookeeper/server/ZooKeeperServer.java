@@ -286,7 +286,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
          *
          * See ZOOKEEPER-1642 for more detail.
          */
-    	//根据是否初始化来从内存或者硬盘中读取zxid
+    	//根据是否初始化来从内存或者硬盘中读取zxid，一般不用重新读数据，只需要加载下ZXID就可以
         if(zkDb.isInitialized()){
             setZxid(zkDb.getDataTreeLastProcessedZxid());
         }

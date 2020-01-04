@@ -164,8 +164,7 @@ public class QuorumPeerMain {
           ServerCnxnFactory cnxnFactory = null;
           ServerCnxnFactory secureCnxnFactory = null;
 
-          //创建一个处理IO连接的组件cnxnFactory，这里和单机版不一样的地方是它不调用startup方法，具体的启动要
-          //等在后面的选主逻辑完成后，确定了自己的身份再启动
+          //创建一个处理IO连接的组件cnxnFactory
           if (config.getClientPortAddress() != null) {
               cnxnFactory = ServerCnxnFactory.createFactory();
               cnxnFactory.configure(config.getClientPortAddress(),
@@ -182,7 +181,7 @@ public class QuorumPeerMain {
           }
           //直接调用new返回一个QuorumPeer
           quorumPeer = getQuorumPeer();
-          //前面设置的监控组件，实际上never uesed?
+          //前面设置的监控组件
           quorumPeer.setRootMetricsContext(metricsProvider.getRootContext());
           //日志（事务日志和数据快照）的操作类
           quorumPeer.setTxnFactory(new FileTxnSnapLog(
@@ -224,7 +223,7 @@ public class QuorumPeerMain {
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           //是否有权投票，PARTICIPANT（默认）可以投票，OBSERVER不能投票
           quorumPeer.setLearnerType(config.getPeerType());
-          //zzz:判断observer是否同步的属性名称(暂不理解什么意思)
+          //zzz:判断observer是否同步的属性名称
           quorumPeer.setSyncEnabled(config.getSyncEnabled());
           //Zookeeper服务器是否监听所有可用IP地址的连接，默认false，
           //zzz:暂时不知道干啥用的，好像是会影响运维部署方面的

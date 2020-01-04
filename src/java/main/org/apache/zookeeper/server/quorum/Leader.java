@@ -390,7 +390,7 @@ public class Leader {
                         BufferedInputStream is = new BufferedInputStream(
                                 s.getInputStream());
                         LearnerHandler fh = new LearnerHandler(s, is, Leader.this);
-                        fh.start();//每次接到信息后，就新开一个线程进行处理
+                        fh.start();//对于每个follower，都有一个新的线程来对应的处理
                     } catch (SocketException e) {
                         if (stop) {
                             LOG.info("exception while shutting down acceptor: "
@@ -524,12 +524,12 @@ public class Leader {
             // We have to get at least a majority of servers in sync with
             // us. We do this by waiting for the NEWLEADER packet to get
             // acknowledged
-
+            // 等到一半以上的follower连上
              waitForEpochAck(self.getId(), leaderStateSummary);
              self.setCurrentEpoch(epoch);
 
              try {
-            	 //等待从机确认自己为主机，需要收到一半以上的回应
+            	 //等待从机确认自己为主机，需要收到一半以上的回应newleader请求
                  waitForNewLeaderAck(self.getId(), zk.getZxid());
              } catch (InterruptedException e) {
                  shutdown("Waiting for a quorum of followers, only synced with sids: [ "
@@ -1362,7 +1362,7 @@ public class Leader {
          *  config to itself.
          */
         QuorumVerifier newQV = self.getLastSeenQuorumVerifier();
-        //zzz：后面看
+        //reconfig 相关
         Long designatedLeader = getDesignatedLeader(newLeaderProposal, zk.getZxid());
 
         self.processReconfig(newQV, designatedLeader, zk.getZxid(), true);
@@ -1371,7 +1371,7 @@ public class Leader {
         }
 
         leaderStartTime = Time.currentElapsedTime();
-        zk.startup();
+        zk.startup();  //设置处理链
         /*
          * Update the election vote here to ensure that all members of the
          * ensemble report the same vote to new servers that start up and

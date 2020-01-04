@@ -759,7 +759,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory {
     @Override
     public void startup(ZooKeeperServer zks, boolean startServer)
             throws IOException, InterruptedException {
-        //启动各种线程池
+        //启动各种用于通信的线程池
     	start();
         setZooKeeperServer(zks);
         if (startServer) {

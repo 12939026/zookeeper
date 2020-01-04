@@ -936,7 +936,7 @@ public class FastLeaderElection implements Election {
             /*
              * Loop in which we exchange notifications until we find a leader
              */
-
+            //接受同步别人的选票的循环
             while ((self.getPeerState() == ServerState.LOOKING) &&
                     (!stop)){ 
                 /*

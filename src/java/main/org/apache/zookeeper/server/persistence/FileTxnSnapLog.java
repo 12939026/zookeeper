@@ -260,10 +260,11 @@ public class FileTxnSnapLog {
      */
     public long fastForwardFromEdits(DataTree dt, Map<Long, Integer> sessions,
                                      PlayBackListener listener) throws IOException {
-        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1);  //从前面的最大zxid后一个开始读取事务
+        TxnIterator itr = txnLog.read(dt.lastProcessedZxid+1);  //建立一个循环器
         long highestZxid = dt.lastProcessedZxid;
         TxnHeader hdr;
         try {
+        	//从前面的最大zxid后一个开始读取事务
             while (true) {
                 // iterator points to
                 // the first valid txn when initialized

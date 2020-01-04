@@ -123,7 +123,7 @@ public class ZooKeeperServerMain {
         LOG.info("Starting server");
         FileTxnSnapLog txnLog = null;
         try {
-        	//创建一个MetricsProvider，用于信息收集? 待确定
+        	//创建一个MetricsProvider，用于信息收集
         	//这个东西的执行类默认是NullMetricsProvider，也就是啥都不做，
         	//可以通过在配置文件里指定类名metricsProvider.className来指定实例化的类
             try {
@@ -180,7 +180,7 @@ public class ZooKeeperServerMain {
             }
 
             
-            //ContainerManager用于定期删除那些cversion>0并且没有children节点的node，（为何要删除他们？ 没明白。）
+            //ContainerManager用于定期删除那些cversion>0并且没有children节点的node
             containerManager = new ContainerManager(zkServer.getZKDatabase(), zkServer.firstProcessor,
                     Integer.getInteger("znode.container.checkIntervalMs", (int) TimeUnit.MINUTES.toMillis(1)),
                     Integer.getInteger("znode.container.maxPerMinute", 10000)

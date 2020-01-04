@@ -77,7 +77,7 @@ public class Follower extends Learner{
         try {
             QuorumServer leaderServer = findLeader();    //根据最新的选票信息来构建主服务器
             try {
-                connectToLeader(leaderServer.addr, leaderServer.hostname);
+                connectToLeader(leaderServer.addr, leaderServer.hostname);  //和leader建立长连接
                 long newEpochZxid = registerWithLeader(Leader.FOLLOWERINFO);   //向leader注册
                 if (self.isReconfigStateChange())
                    throw new Exception("learned about role change");
