@@ -778,8 +778,8 @@ public class LearnerHandler extends ZooKeeperThread {
                 needOpPacket = false;
                 needSnap = false;
             } 
-            //从机的ID大于主机，并且从机不是新的纪元
-            //这种情况可能是从机曾经是leader（它是在完成选举之后再加入的）
+            //从机的ID大于主机，并且从机不是新的纪元(新的纪元不能回滚)
+            //这种情况可能是从机曾经是leader或者它领先于新主机（它是在完成选举之后再加入的）
             else if (peerLastZxid > maxCommittedLog && !isPeerNewEpochZxid) {
                 // Newer than committedLog, send trunc and done
                 LOG.debug("Sending TRUNC to follower zxidToSend=0x" +
@@ -790,7 +790,7 @@ public class LearnerHandler extends ZooKeeperThread {
                 needOpPacket = false;
                 needSnap = false;
             } 
-            //如果主从机的ZXID不同，那么根据大小，我们发送diff或者TRUNC
+            //在leader的commitlog的范围内，那根据快慢发送diff或者trunc。
             else if ((maxCommittedLog >= peerLastZxid)
                     && (minCommittedLog <= peerLastZxid)) {
                 // Follower is within commitLog range

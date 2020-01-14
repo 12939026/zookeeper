@@ -74,10 +74,12 @@ public class ObserverZooKeeperServer extends LearnerZooKeeperServer {
      * @param request
      */
     public void commitRequest(Request request) {     
-        if (syncRequestProcessorEnabled) {
+        //和follower不同，observer的落盘操作是在投票结束之后，和内存一起写
+    	if (syncRequestProcessorEnabled) {
             // Write to txnlog and take periodic snapshot
             syncProcessor.processRequest(request);
         }
+    	//写内存
         commitProcessor.commit(request);        
     }
     

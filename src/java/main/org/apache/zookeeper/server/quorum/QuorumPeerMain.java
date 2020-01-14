@@ -210,7 +210,7 @@ public class QuorumPeerMain {
           quorumPeer.setConfigFileName(config.getConfigFilename());
           //内存数据库
           quorumPeer.setZKDatabase(new ZKDatabase(quorumPeer.getTxnFactory()));
-          //集群信息的内存存储类
+          //集群信息的管理类
           quorumPeer.setQuorumVerifier(config.getQuorumVerifier(), false);
           if (config.getLastSeenQuorumVerifier()!=null) {
               quorumPeer.setLastSeenQuorumVerifier(config.getLastSeenQuorumVerifier(), false);
@@ -223,7 +223,7 @@ public class QuorumPeerMain {
           quorumPeer.setSecureCnxnFactory(secureCnxnFactory);
           //是否有权投票，PARTICIPANT（默认）可以投票，OBSERVER不能投票
           quorumPeer.setLearnerType(config.getPeerType());
-          //zzz:判断observer是否同步的属性名称
+          //判断observer是否写硬盘的属性名称
           quorumPeer.setSyncEnabled(config.getSyncEnabled());
           //Zookeeper服务器是否监听所有可用IP地址的连接，默认false，
           //zzz:暂时不知道干啥用的，好像是会影响运维部署方面的

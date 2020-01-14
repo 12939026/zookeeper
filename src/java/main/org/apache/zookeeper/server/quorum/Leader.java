@@ -784,7 +784,7 @@ public class Leader {
                     + (lastCommitted+1));
         }
 
-        outstandingProposals.remove(zxid);
+        outstandingProposals.remove(zxid);   //待处理的提案
 
         if (p.request != null) {
              toBeApplied.add(p);
@@ -817,11 +817,11 @@ public class Leader {
             informAndActivate(p, designatedLeader);
             //turnOffFollowers();
         } else {
-            commit(zxid);
-            inform(p);
+            commit(zxid);  //发送给follower，让他们commit
+            inform(p);    //发送给observer，直接写入
         }
-        zk.commitProcessor.commit(p.request);
-        if(pendingSyncs.containsKey(zxid)){
+        zk.commitProcessor.commit(p.request); //让主机提交
+        if(pendingSyncs.containsKey(zxid)){  //同步类请求
             for(LearnerSyncRequest r: pendingSyncs.remove(zxid)) {
                 sendSync(r);
             }
@@ -875,14 +875,14 @@ public class Leader {
             // The proposal has already been committed
             return;
         }
-        Proposal p = outstandingProposals.get(zxid);
+        Proposal p = outstandingProposals.get(zxid);   //ProposalRequestProcessor放进去的
         if (p == null) {
             LOG.warn("Trying to commit future proposal: zxid 0x{} from {}",
                     Long.toHexString(zxid), followerAddr);
             return;
         }
 
-        p.addAck(sid);
+        p.addAck(sid); //处理ACK的request
         /*if (LOG.isDebugEnabled()) {
             LOG.debug("Count for zxid: 0x{} is {}",
                     Long.toHexString(zxid), p.ackSet.size());
@@ -1009,7 +1009,7 @@ public class Leader {
             lastCommitted = zxid;
         }
         QuorumPacket qp = new QuorumPacket(Leader.COMMIT, zxid, null, null);
-        sendPacket(qp);
+        sendPacket(qp);   //发送给所有的follower
         ServerMetrics.COMMIT_COUNT.add(1);
     }
 
@@ -1088,9 +1088,9 @@ public class Leader {
             throw new XidRolloverException(msg);
         }
 
-        byte[] data = SerializeUtils.serializeRequest(request);
-        proposalStats.setLastBufferSize(data.length);
-        QuorumPacket pp = new QuorumPacket(Leader.PROPOSAL, request.zxid, data, null);
+        byte[] data = SerializeUtils.serializeRequest(request);  //序列化数据
+        proposalStats.setLastBufferSize(data.length);  //数据长度
+        QuorumPacket pp = new QuorumPacket(Leader.PROPOSAL, request.zxid, data, null);  //分装成数据包
 
         Proposal p = new Proposal();
         p.packet = pp;
@@ -1113,7 +1113,7 @@ public class Leader {
 
             lastProposed = p.packet.getZxid();
             outstandingProposals.put(lastProposed, p);
-            sendPacket(pp);
+            sendPacket(pp);    //发送包
         }
         return p;
     }

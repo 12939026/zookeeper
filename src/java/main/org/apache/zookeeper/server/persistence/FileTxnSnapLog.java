@@ -212,7 +212,7 @@ public class FileTxnSnapLog {
     public long restore(DataTree dt, Map<Long, Integer> sessions,
                         PlayBackListener listener) throws IOException {
         long deserializeResult = snapLog.deserialize(dt, sessions); //先从快照文件中解析，若没有文件，说明是新启动的，返回-1，若100个文件都坏了，抛出异常
-        FileTxnLog txnLog = new FileTxnLog(dataDir);        //日志文件
+        FileTxnLog txnLog = new FileTxnLog(dataDir);        //事务日志文件
         boolean trustEmptyDB;
         File initFile = new File(dataDir.getParent(), "initialize");     //初始化文件
         if (Files.deleteIfExists(initFile.toPath())) {

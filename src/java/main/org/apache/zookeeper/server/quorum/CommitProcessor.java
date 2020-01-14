@@ -172,15 +172,15 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                  * request from a client on another server (i.e., the order of
                  * the following two lines is important!).
                  */
-                commitIsWaiting = !committedRequests.isEmpty();
-                requestsToProcess =  queuedRequests.size();
+                commitIsWaiting = !committedRequests.isEmpty();        //committedRequests是需要本机提交的队列，是由AckRequestProcessor写入的
+                requestsToProcess =  queuedRequests.size();            //queuedRequests是从上一个ProposalRequestProcessor过来的
                 // Avoid sync if we have something to do
                 if (requestsToProcess == 0 && !commitIsWaiting){
                     // Waiting for requests to process
                     synchronized (this) {
                         while (!stopped && requestsToProcess == 0
                                 && !commitIsWaiting) {
-                            wait();                  //request为空的时候就等待新的请求，直到有
+                            wait();                  //当新的请求和commit请求都为空的时候就等待新的请求，直到有
                             commitIsWaiting = !committedRequests.isEmpty();
                             requestsToProcess = queuedRequests.size();
                         }
@@ -197,16 +197,17 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                         && (request = queuedRequests.poll()) != null) {
                     requestsToProcess--;
                     if (needCommit(request)    //是否事务请求
-                    		//是否挂起的请求（挂起的请求时只需要等待从机投票的请求）
+                    		//是否这台客户端的事务请求还在挂起中？（即时不是事务请求，
+                    		//也必须等这台客户端对应的事务请求处理完，这个是为了保证对单台客户端的顺序一致性）
                             || pendingRequests.containsKey(request.sessionId)) {
                         // Add request to pending
-                        LinkedList<Request> requests = pendingRequests
+                        LinkedList<Request> requests = pendingRequests   //挂起的请求（等待follower投票的和等待同一客户端事务处理完毕的非事务请求）
                                 .get(request.sessionId);
-                        if (requests == null) {
+                        if (requests == null) {  //没有就新建
                             requests = new LinkedList<Request>();
                             pendingRequests.put(request.sessionId, requests);
                         }
-                        requests.addLast(request);
+                        requests.addLast(request);   //将这个请求加入
                     }
                     else {
                         sendToNextProcessor(request); //将request发往下一个processor处理
@@ -222,7 +223,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                      * pending write or for a write originating at a different
                      * server.
                      */
-                    if (!pendingRequests.isEmpty() && !committedRequests.isEmpty()){
+                    if (!pendingRequests.isEmpty() && !committedRequests.isEmpty()){//如果有可以被提交的request，优先处理commit
                         /*
                          * We set commitIsWaiting so that we won't check
                          * committedRequests again.
@@ -234,7 +235,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
 
                 // Handle a single committed request
                 if (commitIsWaiting && !stopped){
-                    waitForEmptyPool();
+                    waitForEmptyPool();  //阻塞方法，处理事务请求的时候需要等后面的processsor处理完，避免因为并发造成的问题。
 
                     if (stopped){
                         return;
@@ -301,9 +302,9 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                             request = topPending;
                         }
                     }
-
+                    //第一个肯定是需要处理的事务请求，将它交给下一个处理器
                     sendToNextProcessor(request);
-
+                    //等待下面的包装完成
                     waitForEmptyPool();
 
                     /*
@@ -311,6 +312,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                      * empty.
                      */
                     if (sessionQueue != null) {
+                    	//这个循环是将接下去的查询类请求处理完，直到结束或者下一个阻塞的事务请求
                         while (!stopped && !sessionQueue.isEmpty()
                                 && !needCommit(sessionQueue.peek())) {
                             sendToNextProcessor(sessionQueue.poll());

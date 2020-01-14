@@ -67,7 +67,7 @@ public class ProposalRequestProcessor implements RequestProcessor {
          * contain the handler. In this case, we add it to syncHandler, and
          * call processRequest on the next processor.
          */
-    	//zzz:?
+    	//来自learner的事务记录需求
         if (request instanceof LearnerSyncRequest){
             zks.getLeader().processSync((LearnerSyncRequest)request);
         } 
