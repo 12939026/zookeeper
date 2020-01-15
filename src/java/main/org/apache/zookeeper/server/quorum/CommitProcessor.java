@@ -172,7 +172,7 @@ public class CommitProcessor extends ZooKeeperCriticalThread implements
                  * request from a client on another server (i.e., the order of
                  * the following two lines is important!).
                  */
-                commitIsWaiting = !committedRequests.isEmpty();        //committedRequests是需要本机提交的队列，是由AckRequestProcessor写入的
+                commitIsWaiting = !committedRequests.isEmpty();        //committedRequests是需要本机提交的队列，是由Leader.tryToCommit写入的
                 requestsToProcess =  queuedRequests.size();            //queuedRequests是从上一个ProposalRequestProcessor过来的
                 // Avoid sync if we have something to do
                 if (requestsToProcess == 0 && !commitIsWaiting){
